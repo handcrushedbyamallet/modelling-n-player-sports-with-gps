@@ -42,7 +42,6 @@ Right now, the simulation can be run through `test.py`. Simply run `python test.
 If you want to use the simulation manuually, you can do so through the `simulate_race` function in `simulation.py`
 
 ```py
-import pandas as pd
 from f1_simulation.f1_race_course import F1RaceCourse
 from f1_simulation.f1_racer import F1Racer
 from f1_simulation.simulation import simulate_race
