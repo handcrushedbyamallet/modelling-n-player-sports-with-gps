@@ -39,6 +39,7 @@ def simulate_lap(racers: List[F1Racer]) -> List[F1Racer]:
         else:
             racer.laps_since_pit_stop += 1
 
+    racers = sorted(racers, key=lambda x: x.current_time)  # Sort again for good measure
     return racers
 
 
