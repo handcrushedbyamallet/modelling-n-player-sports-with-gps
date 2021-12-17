@@ -1,43 +1,32 @@
 import pandas as pd
 import os
-from typing import List, Optional
+import glob
+from typing import List, Optional, Any, Union
 
 
 class F1Dataset:
     """API to Formula 1 data. This object facilitates the joining of multiple
-    Formula 1 datasets.
+    Formula 1 datasets as well as lazy-loading of the datasets to concerve
+    memory and general utilities around the data.
     """
-    def __init__(self, dirpath: str, datasets: Optional[List[str]] = None):
-        data = {}
-        if datasets is None:
-            self.datasets = [
-                "circuits",
-                "constructor_results",
-                "constructor_standings",
-                "constructors",
-                "driver_standings",
-                "drivers",
-                "lap_times",
-                "pit_stops",
-                "qualifying",
-                "races",
-                "results",
-                "seasons",
-                "status"
-            ]
-        else:
-            self.datasets = datasets
-
-        for dataset in self.datasets:
-            data[dataset] = pd.read_csv(os.path.join(dirpath, dataset + '.csv'))
-
-        self._data = data
+    def __init__(self, dirpath: str):
+        self.__loaded = []
+        self.dirpath = dirpath
+        self.datasets = [os.path.basename(fp).removesuffix('.csv') 
+                         for fp in glob.glob(f'{dirpath}/*.csv')]
+        print(self.datasets)
+        self._data = {}
 
     def __getattr__(self, __name: str) -> pd.DataFrame:
         if __name not in self.datasets:
             raise AttributeError(f"F1Dataset has no attribute {__name}")
-        else:
-            return self._data[__name]
+        else:  # Lazy load dataset
+            if __name in self.__loaded:
+                return self._data[__name]
+            else:
+                self._data[__name] = pd.read_csv(os.path.join(self.dirpath, __name + '.csv'))
+                self.__loaded.append(__name)
+                return self._data[__name]
 
     def __repr__(self) -> str:
         repr_str = 'F1Dataset with the following dataframes:\n'
@@ -47,3 +36,35 @@ class F1Dataset:
             repr_str += '\n\n'
         return repr_str
         
+    def driver_id_to_name(self, driver_id: int) -> str:
+        """Return a driver name from the driverId number in the dataset
+
+        Args:
+            driver_id (int): The driver ID in the F1Dataset
+
+        Returns:
+            str: The driver's name
+        """
+        return self.__driver_mapping[driver_id]
+
+    def constructor_id_to_name(self, constructor_id: int) -> str:
+        """Return a constructor name from the constructorId number in the dataset
+
+        Args:
+            constructor_id (int): The constructor ID in the F1Dataset
+
+        Returns:
+            str: The constructor's name
+        """
+        return self.__constructor_mapping[constructor_id]
+
+    def course_id_to_name(self, course_id: int) -> str:
+        """Return a course name from the courseId number in the dataset
+
+        Args:
+            course_id (int): The course ID in the F1Dataset
+
+        Returns:
+            str: The course's name
+        """
+        return self.__course_mapping[course_id]

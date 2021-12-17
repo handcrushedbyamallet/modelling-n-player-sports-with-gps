@@ -1,5 +1,4 @@
 from f1_racer import F1Racer
-from f1_race_course import F1RaceCourse
 
 from typing import List
 

@@ -1,5 +1,4 @@
 import pandas as pd
-from f1_race_course import F1RaceCourse
 from f1_racer import F1Racer
 from simulation import simulate_race
 from dataprocessing import F1Dataset

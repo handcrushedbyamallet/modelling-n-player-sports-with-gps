@@ -3,15 +3,18 @@ from __future__ import annotations
 import lap_times
 import pit_stopping
 import overtaking
-from f1_race_course import F1RaceCourse
-
 
 class F1Racer:
     """The F1Racer class is the functioning heart of this simulation. It
     represents a single driver, constructor, car combination and stores the
     models for each of the different subproblems for the system. Upon
     initialisation it fits models to each subproblem. These systems are used to
-    govern how the racer performs in the race.
+    govern how long the racer takes to finish each lap.
+    Args:
+        driver (str): the name of the driver
+        constructor (str): the name of the constructor
+        course (str): The name of the course
+        start_time (float): The time penalty incurred from starting in a later position
     """
     def __init__(self, driver: str, constructor: str, course: str, starting_time: float):
         self.driver = driver
