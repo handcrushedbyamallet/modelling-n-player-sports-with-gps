@@ -31,11 +31,14 @@ class F1Dataset:
                 return self._data[__name]
 
     def __repr__(self) -> str:
-        repr_str = 'F1Dataset with the following dataframes:\n'
-        for dataset in self.datasets:
+        repr_str = 'F1Dataset with the following dataframes loaded:\n'
+        for dataset in self.__loaded:
             repr_str += dataset + ':\n  ' 
             repr_str += '\n  '.join(self._data[dataset].columns)
             repr_str += '\n\n'
+
+        repr_str += 'and the following datasets on disk:\n'
+        repr_str += str(self.datasets)
         return repr_str
         
     def driver_id_to_name(self, driver_id: int) -> str:
