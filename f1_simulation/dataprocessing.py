@@ -8,13 +8,15 @@ class F1Dataset:
     """API to Formula 1 data. This object facilitates the joining of multiple
     Formula 1 datasets as well as lazy-loading of the datasets to concerve
     memory and general utilities around the data.
+
+        Args:
+            dirpath (str): The directory with the F1 data files in
     """
     def __init__(self, dirpath: str):
         self.__loaded = []
         self.dirpath = dirpath
         self.datasets = [os.path.basename(fp).removesuffix('.csv') 
                          for fp in glob.glob(f'{dirpath}/*.csv')]
-        print(self.datasets)
         self._data = {}
 
     def __getattr__(self, __name: str) -> pd.DataFrame:
@@ -68,3 +70,4 @@ class F1Dataset:
             str: The course's name
         """
         return self.__course_mapping[course_id]
+

@@ -16,11 +16,12 @@ class F1Racer:
         course (str): The name of the course
         start_time (float): The time penalty incurred from starting in a later position
     """
-    def __init__(self, driver: str, constructor: str, course: str, starting_time: float):
+    def __init__(self, driver: str, constructor: str, course: str, year: int, starting_time: float):
         self.driver = driver
         self.constructor = constructor
         self.course = course
         self.current_time = starting_time
+        self.year = year
         self.laps_since_pit_stop = 0
         self.initialise_lap_time_params()
         self.initialise_overtake_params()
@@ -29,19 +30,19 @@ class F1Racer:
     def initialise_lap_time_params(self):
         """Fits the model that will govern the lap times of the racer
         """
-        self.lap_time_process = lap_times.make_lap_time_process(self.driver, self.constructor, self.course)
+        self.lap_time_process = lap_times.make_lap_time_process(self.driver, self.constructor, self.course, self.year)
 
     def initialise_overtake_params(self):
         """Fits the model that will govern the racer's ability to overtake
         """
-        self.overtake_process = overtaking.make_overtaking_process(self.driver, self.constructor, self.course)
+        self.overtake_process = overtaking.make_overtaking_process(self.driver, self.constructor, self.course, self.year)
 
     def initialise_pit_stop_params(self):
         """Fits the model that will govern the racer's need to pit stop as well
         as the duration of pit stops
         """
-        self.pit_stop_process = pit_stopping.make_pit_stop_process(self.driver, self.constructor, self.course)
-        self.pit_stop_duration_process = pit_stopping.make_pit_stop_duration_process(self.driver, self.constructor, self.course)
+        self.pit_stop_process = pit_stopping.make_pit_stop_process(self.driver, self.constructor, self.course, self.year)
+        self.pit_stop_duration_process = pit_stopping.make_pit_stop_duration_process(self.driver, self.constructor, self.course, self.year)
 
     def sample_lap_time(self) -> float:
         """Sample a lap time from the racer's lap time model and the course
@@ -77,5 +78,3 @@ class F1Racer:
             float: The time spent in the pit stop in milliseconds
         """
         return self.pit_stop_duration_process()
-
-    

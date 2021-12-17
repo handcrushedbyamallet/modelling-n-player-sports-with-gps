@@ -18,12 +18,13 @@ for race_id in races:
 
     drivers = race['driverId'].tolist()
     constructors = race['constructorId'].tolist()
+    year = data.races.loc[data.races['raceId'] == race_id, 'year'].values[0]
 
     # TODO start the race in the correct order
     delay = 0
     racers = []
     for driver_id, constructor_id in zip(drivers, constructors):
-        racer = F1Racer(driver_id, constructor_id, course_id, starting_time=delay)
+        racer = F1Racer(driver_id, constructor_id, course_id, year, starting_time=delay)
         delay += 20
         racers.append(racer)
 
