@@ -14,6 +14,7 @@ class F1Racer:
         driver (str): the name of the driver
         constructor (str): the name of the constructor
         course (str): The name of the course
+        year (int): The year the race is occuring
         start_time (float): The time penalty incurred from starting in a later position
     """
     def __init__(self, driver: str, constructor: str, course: str, year: int, starting_time: float):
