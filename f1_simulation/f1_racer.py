@@ -11,16 +11,16 @@ class F1Racer:
     initialisation it fits models to each subproblem. These systems are used to
     govern how long the racer takes to finish each lap.
     Args:
-        driver (str): the name of the driver
-        constructor (str): the name of the constructor
-        course (str): The name of the course
+        driver_id (str): the name of the driver
+        constructor_id (str): the name of the constructor
+        course_id (str): The name of the course
         year (int): The year the race is occuring
         start_time (float): The time penalty incurred from starting in a later position
     """
-    def __init__(self, driver: str, constructor: str, course: str, year: int, starting_time: float):
-        self.driver = driver
-        self.constructor = constructor
-        self.course = course
+    def __init__(self, driver_id: str, constructor_id: str, course_id: str, year: int, starting_time: float):
+        self.driver = driver_id
+        self.constructor = constructor_id
+        self.course = course_id
         self.current_time = starting_time
         self.year = year
         self.laps_since_pit_stop = 0
