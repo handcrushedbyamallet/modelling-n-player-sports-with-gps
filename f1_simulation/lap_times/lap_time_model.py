@@ -5,7 +5,7 @@ import pandas as pd
 import GPy
 
 
-def make_lap_time_process(driver_id: str, year: int, total_laps: int) -> Callable[[], float]:
+def make_lap_time_process(driver_id: str, year: int, total_laps: int) -> Callable[[int, int], float]:
     data = F1Dataset('data')
     races = data.races
     years_races = races.loc[races['year'] == year][['raceId', 'circuitId']]
@@ -56,4 +56,4 @@ def make_lap_time_process(driver_id: str, year: int, total_laps: int) -> Callabl
     model = GPy.models.GPRegression(normalised_laps.loc[:, 'lap_r'].values.reshape([-1, 1]),
                                     normalised_laps.loc[:, 'rel_time'].values.reshape([-1, 1]), kernel)
     model.optimize(messages=False, max_f_eval=1000)
-    return lambda lap: model.posterior_samples_f(np.array([[lap / total_laps]]), size=1)[0, 0, 0]
+    return lambda lap, laps_since_pitstop: model.posterior_samples_f(np.array([[lap / total_laps]]), size=1)[0, 0, 0]
