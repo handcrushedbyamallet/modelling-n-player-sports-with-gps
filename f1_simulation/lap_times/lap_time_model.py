@@ -1,11 +1,21 @@
 import numpy as np
-from typing import Callable
+from typing import Callable, Tuple
 from f1_simulation.dataprocessing import F1Dataset
 import pandas as pd
 import GPy
+import datetime
+
+processed_laps = None
+processed_pits = None
 
 
-def make_lap_time_process(driver_id: str, year: int, total_laps: int) -> Callable[[int, int], float]:
+def get_or_load_data(year: int) -> Tuple[pd.DataFrame, pd.DataFrame]:
+    # return data if it was already processed
+    global processed_laps
+    global processed_pits
+    if processed_laps is not None:
+        return processed_laps, processed_pits
+
     data = F1Dataset('data')
     races = data.races
     years_races = races.loc[races['year'] == year][['raceId', 'circuitId']]
@@ -31,17 +41,14 @@ def make_lap_time_process(driver_id: str, year: int, total_laps: int) -> Callabl
     years_pits = years_pits.assign(time=pd.to_timedelta(years_pits['milliseconds'], unit='ms'))
     years_pits['lap'] += 1
 
-    # filter out rows with data of other drivers
-    years_laps = years_laps.loc[years_laps['driverId'] == driver_id].loc[:, ['raceId', 'lap', 'time']]
-    years_pits = years_pits.loc[years_pits['driverId'] == driver_id].loc[:, ['raceId', 'lap', 'time']]
-
     # subtract pitstop time from lap time to have lower impact on lap times
-    pitted_laps = years_laps.merge(years_pits, on=['raceId', 'lap'], suffixes=['_laps', '_pits'])
+    pitted_laps = years_laps.merge(years_pits, on=['raceId', 'lap', 'driverId'], suffixes=['_laps', '_pits'])
     pitted_laps = pitted_laps.assign(time=pitted_laps['time_laps'] - pitted_laps['time_pits'])
-    pitted_laps.set_index(['raceId', 'lap'], inplace=True)
-    years_laps.set_index(['raceId', 'lap'], inplace=True)
+    pitted_laps.set_index(['raceId', 'lap', 'driverId'], inplace=True)
+    years_laps.set_index(['raceId', 'lap', 'driverId'], inplace=True)
     years_laps.update(pitted_laps)
     years_laps.reset_index(inplace=True)
+    pitted_laps.reset_index(inplace=True)
 
     # transform lap idx to ratio of whole race for normalisation of progress across races
     normalised_laps = years_laps.merge(race_laps, on='raceId', suffixes=['_idx', '_n'])
@@ -50,10 +57,55 @@ def make_lap_time_process(driver_id: str, year: int, total_laps: int) -> Callabl
     # transform lap time into ratio of original time to fastest quali time at the race for normalisation across races
     normalised_laps = normalised_laps.merge(top_times, on='raceId')
     normalised_laps = normalised_laps.assign(
-        rel_time=normalised_laps['time']/normalised_laps['q3']).loc[:, ['raceId', 'lap_idx', 'lap_r', 'rel_time']]
+        rel_time=normalised_laps['time']/normalised_laps['q3']).loc[
+                      :, ['raceId', 'driverId', 'lap_idx', 'lap_r', 'lap_n', 'rel_time']]
 
-    kernel = GPy.kern.RBF(input_dim=1)
-    model = GPy.models.GPRegression(normalised_laps.loc[:, 'lap_r'].values.reshape([-1, 1]),
+    processed_laps = normalised_laps
+    processed_pits = pitted_laps
+
+    return normalised_laps, pitted_laps
+
+
+def make_lap_time_process(
+        driver_id: int,
+        year: int,
+        total_laps: int,
+        top_quali: datetime.timedelta,
+        normalise_pit_laps: bool = True,
+) -> Callable[[int, int], float]:
+
+    normalised_laps, years_pits = get_or_load_data(year)
+
+    # filter out rows with data of other drivers
+    normalised_laps = normalised_laps.loc[normalised_laps['driverId'] == driver_id]
+    years_pits = years_pits.loc[years_pits['driverId'] == driver_id]
+
+    # define function to create laps since pitstop column and create it
+    def laps_since_pit(race_id, lap_idx, laps):
+        last_pit = years_pits.loc[(years_pits['raceId'] == race_id) & (years_pits['lap'] <= lap_idx)]['lap'].max()
+        if pd.isnull(last_pit):
+            res = lap_idx
+        else:
+            res = lap_idx - last_pit
+        if normalise_pit_laps:
+            return res / laps
+        else:
+            return res
+
+    normalised_laps = normalised_laps.assign(
+        laps_since_pit=normalised_laps.apply(lambda row: laps_since_pit(
+            row['raceId'], row['lap_idx'], row['lap_n']), axis=1))
+
+    # create model and optimise
+    kernel = GPy.kern.RBF(input_dim=2)
+    model = GPy.models.GPRegression(normalised_laps.loc[:, ['lap_r', 'laps_since_pit']].values.reshape([-1, 2]),
                                     normalised_laps.loc[:, 'rel_time'].values.reshape([-1, 1]), kernel)
-    model.optimize(messages=False, max_f_eval=1000)
-    return lambda lap, laps_since_pitstop: model.posterior_samples_f(np.array([[lap / total_laps]]), size=1)[0, 0, 0]
+    model.optimize(messages=False)
+
+    # return prediction
+    if normalise_pit_laps:
+        return lambda lap, laps_since_pitstop: model.posterior_samples_f(
+            np.array([[lap, laps_since_pitstop]]) / total_laps, size=1)[0, 0, 0] * top_quali
+    else:
+        return lambda lap, laps_since_pitstop: model.posterior_samples_f(
+            np.array([[lap / total_laps, laps_since_pitstop]]), size=1)[0, 0, 0] * top_quali
