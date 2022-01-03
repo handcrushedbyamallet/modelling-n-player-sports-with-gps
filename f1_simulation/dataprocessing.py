@@ -18,6 +18,8 @@ class F1Dataset:
         self.datasets = [os.path.basename(fp).removesuffix('.csv') 
                          for fp in glob.glob(f'{dirpath}/*.csv')]
         self._data = {}
+        if not self.datasets:
+            raise FileNotFoundError(f"'{dirpath}' is empty or does not exist")
 
     def __getattr__(self, __name: str) -> pd.DataFrame:
         if __name not in self.datasets:

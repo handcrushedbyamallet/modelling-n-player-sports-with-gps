@@ -1,6 +1,6 @@
 import numpy as np
 from typing import Callable, Tuple
-from f1_simulation.dataprocessing import F1Dataset
+from dataprocessing import F1Dataset
 import pandas as pd
 import GPy
 import datetime
