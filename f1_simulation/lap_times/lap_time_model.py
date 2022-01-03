@@ -23,6 +23,7 @@ def get_or_load_data(year: int) -> Tuple[pd.DataFrame, pd.DataFrame]:
     # load qualification data,obtain fastest quali time at each race for normalisation purposes
     qualis = data.qualifying
     qrs = qualis.merge(years_races, on='raceId')
+    qrs = qrs.loc[qrs['q3'] != '\\N']
     top_time_idx = qrs.groupby(['raceId'])['q3'].transform(min) == qrs['q3']
     top_times = qrs[top_time_idx][['q3', 'raceId']]
     top_times['q3'] = pd.to_datetime(top_times['q3'], format='%M:%S.%f') \
