@@ -16,6 +16,9 @@ df = (df.set_index(['raceId', 'driverId'])
                   .min(axis=1)
                   .rename('top_quali')))  # Yikes
 
+df['top_quali'] = df['top_quali'] - pd.to_datetime('1900-01-01', format='%Y-%m-%d')
+print(df['top_quali'])
+
 df.reset_index(drop=False, inplace=True)
 df = df.loc[df['year'] == 2013]
 races = df['raceId'].unique()
