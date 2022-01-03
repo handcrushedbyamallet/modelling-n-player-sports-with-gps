@@ -4,6 +4,8 @@ import lap_times
 import pit_stopping
 import overtaking
 
+import datetime
+
 class F1Racer:
     """The F1Racer class is the functioning heart of this simulation. It
     represents a single driver, constructor, car combination and stores the
@@ -17,18 +19,27 @@ class F1Racer:
         year (int): The year the race is occuring
         start_time (float): The time penalty incurred from starting in a later position
     """
-    def __init__(self, driver_id: str, constructor_id: str, course_id: str, year: int, starting_time: float):
+    def __init__(
+        self, 
+        driver_id: str, 
+        constructor_id: str, 
+        course_id: str, 
+        year: int, 
+        starting_time: float,
+        total_laps: int,
+        top_quali: datetime.timedelta
+    ):
         self.driver = driver_id
         self.constructor = constructor_id
         self.course = course_id
         self.current_time = starting_time
         self.year = year
         self.laps_since_pit_stop = 0
-        self.initialise_lap_time_params()
+        self.initialise_lap_time_params(driver_id, year, total_laps, top_quali)
         self.initialise_overtake_params()
         self.initialise_pit_stop_params()
 
-    def initialise_lap_time_params(self):
+    def initialise_lap_time_params(self, driver_id: int, year: int, total_laps: int, top_quali: datetime.timedelta, normalise_pit_laps: bool = True):
         """Fits the model that will govern the lap times of the racer
         """
         self.lap_time_process = lap_times.make_lap_time_process(self.driver, self.constructor, self.course, self.year)

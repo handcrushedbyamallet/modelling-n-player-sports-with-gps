@@ -37,7 +37,7 @@ def make_overtaking_process(driver: str, constructor: str, course: str, year: in
     kernel = GPy.kern.RBF(input_dim=4, lengthscale=500)
     m = GPy.models.GPRegression(X,Y,kernel)
     m.optimize(messages=True)
-    m.optimize_restarts(num_restarts = 10)
+    # m.optimize_restarts(num_restarts = 1)
     # #print(m.predict([[10000], [841],[1]]))
     # # m.plot()
     # # plt.show(block=True) 
@@ -49,13 +49,13 @@ def make_overtaking_process(driver: str, constructor: str, course: str, year: in
     #     m.optimize_restarts(num_restarts = 10)
     
     ## Set course to 841 and driver to Hamilton
-    m.plot(fixed_inputs=[(1,841), (2,2021), (3,1)], plot_data=True)
-    plt.show(block=True) 
+    # m.plot(fixed_inputs=[(1,841), (2,2021), (3,1)], plot_data=True)
+    # plt.show(block=True) 
 
     ##TODO: Either change input params to take ID, or write helper methods to converst strings to IDs
 
-    result = m.predict([[driver], [constructor], [course],[year]])
-    print(result)
+    # result = m.predict([[driver], [constructor], [course], [year]])
+    # print(result)
 
     return lambda opponent: random.random() > 0.5
 
