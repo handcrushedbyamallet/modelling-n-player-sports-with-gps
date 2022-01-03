@@ -93,8 +93,6 @@ def make_lap_time_process(
         else:
             return res
 
-    print("ran")
-
     normalised_laps = normalised_laps.assign(
         laps_since_pit=normalised_laps.apply(lambda row: laps_since_pit(
             row['raceId'], row['lap_idx'], row['lap_n']), axis=1))

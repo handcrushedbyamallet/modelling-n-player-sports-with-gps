@@ -17,7 +17,9 @@ df = (df.set_index(['raceId', 'driverId'])
                   .rename('top_quali')))  # Yikes
 
 df.reset_index(drop=False, inplace=True)
+df = df.loc[df['year'] == 2013]
 races = df['raceId'].unique()
+
 
 for race_id in races:
     race = df.loc[df['raceId'] == race_id]

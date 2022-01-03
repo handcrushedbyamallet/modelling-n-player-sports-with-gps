@@ -42,7 +42,7 @@ class F1Racer:
     def initialise_lap_time_params(self, driver_id: int, year: int, total_laps: int, top_quali: datetime.timedelta, normalise_pit_laps: bool = True):
         """Fits the model that will govern the lap times of the racer
         """
-        self.lap_time_process = lap_times.make_lap_time_process(self.driver, self.constructor, self.course, self.year)
+        self.lap_time_process = lap_times.make_lap_time_process(driver_id=driver_id, year=year, total_laps=total_laps, top_quali=top_quali)
 
     def initialise_overtake_params(self):
         """Fits the model that will govern the racer's ability to overtake
