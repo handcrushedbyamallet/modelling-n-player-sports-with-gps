@@ -1,20 +1,20 @@
 import numpy as np
 from typing import Callable, Tuple
-from dataprocessing import F1Dataset
+from f1_simulation.dataprocessing import F1Dataset
 import pandas as pd
 import GPy
 import datetime
 
-processed_laps = None
-processed_pits = None
+processed_laps = dict()
+processed_pits = dict()
 
 
 def get_or_load_data(year: int) -> Tuple[pd.DataFrame, pd.DataFrame]:
     # return data if it was already processed
     global processed_laps
     global processed_pits
-    if processed_laps is not None:
-        return processed_laps, processed_pits
+    if year in processed_pits:
+        return processed_laps[year], processed_pits[year]
 
     data = F1Dataset('data')
     races = data.races
@@ -23,7 +23,7 @@ def get_or_load_data(year: int) -> Tuple[pd.DataFrame, pd.DataFrame]:
     # load qualification data,obtain fastest quali time at each race for normalisation purposes
     qualis = data.qualifying
     qrs = qualis.merge(years_races, on='raceId')
-    qrs = qrs.loc[qrs['q3'] != '\\N']
+    qrs = qrs.loc[~pd.isnull(qrs['q3'])]
     top_time_idx = qrs.groupby(['raceId'])['q3'].transform(min) == qrs['q3']
     top_times = qrs[top_time_idx][['q3', 'raceId']]
     top_times['q3'] = pd.to_datetime(top_times['q3'], format='%M:%S.%f') \
@@ -61,8 +61,8 @@ def get_or_load_data(year: int) -> Tuple[pd.DataFrame, pd.DataFrame]:
         rel_time=normalised_laps['time']/normalised_laps['q3']).loc[
                       :, ['raceId', 'driverId', 'lap_idx', 'lap_r', 'lap_n', 'rel_time']]
 
-    processed_laps = normalised_laps
-    processed_pits = pitted_laps
+    processed_laps[year] = normalised_laps
+    processed_pits[year] = pitted_laps
 
     return normalised_laps, pitted_laps
 
@@ -110,3 +110,8 @@ def make_lap_time_process(
     else:
         return lambda lap, laps_since_pitstop: model.posterior_samples_f(
             np.array([[lap / total_laps, laps_since_pitstop]]), size=1)[0, 0, 0] * top_quali
+
+
+if __name__ == '__main__':
+    f = make_lap_time_process(842, 2020, 60, datetime.timedelta(minutes=1.2))
+    print(f(30, 15))
