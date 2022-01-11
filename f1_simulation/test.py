@@ -3,6 +3,7 @@ from f1_racer import F1Racer
 from simulation import simulate_race
 from dataprocessing import F1Dataset
 import numpy as np
+from timeit import default_timer
 
 data = F1Dataset('data')
 

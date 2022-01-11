@@ -7,8 +7,6 @@ import numpy as np
 data = F1Dataset('data')
 
 # Need to get the circuit ID of the courses
-
-
 def make_pit_stop_process(driver_id: str, constructor_id: str, course_id: str, year: int) -> Callable[[], bool]:
     laps_since_last_pitstop = 0
 
