@@ -136,3 +136,6 @@ dmypy.json
 
 # Data
 *.csv
+
+# Files
+f1_simulation/dataprocessing.py
