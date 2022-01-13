@@ -5,61 +5,59 @@ from dataprocessing import F1Dataset
 import numpy as np
 from matplotlib import pyplot as plt
 import pandas as pd
-from sklearn import preprocessing
+from sklearn.preprocessing import StandardScaler
 import create_overtaking_dataset
 from create_overtaking_dataset import make_overtakes_dataset
+import datetime
 
 GPy.plotting.change_plotting_library('matplotlib')
 
 data = F1Dataset('data')
 
 def process_data(driver:str):
+    ## Assume this won't error due to update step
     driverId = get_driver_id(driver) 
     lp = make_overtakes_dataset()
-
     
-    # lp = data.lap_times
-    # qual = data.qualifying
-    # ##Filter out laps with pitstops
-    lp["didPitStop"] = np.logical_not(lp.join(data.pit_stops.set_index(["raceId", "driverId", "lap"]), on=['raceId', 'driverId', 'lap'], rsuffix='pit_stops')["stop"].isna())
-    lp = lp.loc[lp["didPitStop"] == False]
     lp = lp.join(data.races.set_index(['raceId'])[['year', 'circuitId']], on=['raceId'])
     lp = lp.join(data.results.set_index(['raceId', 'driverId'])[['constructorId']], on=['raceId', 'driverId'])
-    lp['avg_laptime'] = lp.groupby(['raceId', 'driverId'])['milliseconds'].transform(np.mean)
-    #lp['num_drivers'] = lp.groupby(['raceId'])['driverId'].nunique()
+    lp = lp.join(data.qualifying.set_index(['raceId', 'driverId'])[['q1','q2','q3']], on=['raceId','driverId'], lsuffix="qual_pos")
+    ## Take first qualifying time as number is variable
+    lp['q1'] = pd.to_datetime(lp['q1'], format='%M:%S.%f', errors='coerce')
+    lp['qualtime'] = list(map(lambda x: (x - datetime.datetime(1900, 1, 1)).total_seconds(), lp['q1']))
+    
     try:
         lp = lp.loc[lp['driverId'] == driverId]
-        
     except:
         lp = lp
         print("Driver not found")
 
-    #print(lp)
     ## Missed overtakes
     lp['num_overtakes'] = lp.groupby(['raceId', 'driverId'])['position_change'].transform(lambda x: x[x > 0].sum())
     lp['stuck_behind'] = lp.groupby(['raceId', 'driverId'])['stuck_behind_driver'].transform(lambda x: x[x == True].sum())
     print("after:",lp)
-    K = 5
-    lp['success_perc'] = (lp['num_overtakes']/(lp['stuck_behind']+lp['num_overtakes']))-lp['position'].transform(lambda x: K/x )
-   
-    # ## Account for new/unseen drivers
-    
-    return lp
+
+    ## Calculate percentage of successful overtakes
+    lp['success_perc'] = (lp['num_overtakes']/(lp['stuck_behind']+lp['num_overtakes']))
+    overtaking = lp.groupby(['raceId', 'driverId']).first().reset_index()
+
+    return overtaking
 
 
 def make_overtaking_process(lap_time: int, driver: str, constructor: int, courseId: int, year: int):
     
-    #print(overtaking) 
-
-    X = overtaking[['avg_laptime', 'year', 'circuitId', 'constructorId']]
+    overtaking = process_data(driver)   
+    overtaking.dropna(inplace=True)
+    X = overtaking[['qualtime', 'year', 'circuitId', 'constructorId']]
     Y = overtaking[['success_perc']]
     
     print("initialise kernel")
-    kernel = GPy.kern.RBF(input_dim=4, lengthscale=1000)
+    kernel = GPy.kern.RBF(input_dim=3, lengthscale=10)
 
     print("fit model")
     m = GPy.models.GPRegression(X,Y,kernel)
-    m.optimize(messages=False)
+    print("done")
+    m.optimize(messages=True)
     m.optimize_restarts(num_restarts = 10)
 
     #print(overtaking)
@@ -88,5 +86,5 @@ def get_driver_ref(driverId):
     return driver_ref
 
 
-overtaking = process_data("heidfeld")   
-make_overtaking_process(10000, "hamilton", 1, 1, 2021)
+# overtaking = process_data("hamilton")   
+# make_overtaking_process(80, "hamilton", 1, 1, 2021)
