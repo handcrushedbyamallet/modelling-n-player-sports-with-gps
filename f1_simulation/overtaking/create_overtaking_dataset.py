@@ -1,5 +1,5 @@
 import pandas as pd
-from f1_simulation.dataprocessing import F1Dataset
+from dataprocessing import F1Dataset
 
 def make_overtakes_dataset(cutoff_milliseconds=1000):
     data = F1Dataset('data')
@@ -11,9 +11,7 @@ def make_overtakes_dataset(cutoff_milliseconds=1000):
     lap_times = lap_times.sort_values(by=['raceId', 'lap', 'total_time'])
     lap_times['distance_to_leading_racer'] = lap_times.groupby(['raceId', 'lap'])['total_time'].diff()
 
-    assert (lap_times['distance_to_leading_racer'] >= 0).all()
-
-    lap_times['close_to_leading_racer'] = lap_times['distance_to_leading_driver'] < cutoff_milliseconds
+    lap_times['close_to_leading_racer'] = lap_times['distance_to_leading_racer'] < cutoff_milliseconds
     lap_times['stuck_behind_driver'] = lap_times['close_to_leading_racer'] & (lap_times['position_change'] == 0)
 
     return lap_times
