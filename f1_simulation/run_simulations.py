@@ -29,6 +29,8 @@ df['top_quali'] = df['top_quali'] - pd.to_datetime('1900-01-01', format='%Y-%m-%
 df.reset_index(drop=False, inplace=True)
 races = df['raceId'].unique()
 
+with open('results.csv', 'w') as f:
+    f.write('race_id,driver,constructor,course,current_time,year,laps_since_pit_stop,lap_no,overtaking_mode,pit_stopping,pit_stop_duration,sampled_lap_time')
 
 for race_id in tqdm(races):
     race = df.loc[df['raceId'] == race_id]
@@ -45,12 +47,13 @@ for race_id in tqdm(races):
     delay = np.timedelta64(0, 's')
     racers = []
     for driver_id, constructor_id in zip(drivers, constructors):
-        if driver_id == 3:
+        if driver_id > 2:
             break
         # print(f"Simulating {driver_id=}, {constructor_id=}")
         top_quali = race.loc[race['driverId'] == driver_id, 'top_quali'].values[0]
-        racer = F1Racer(driver_id, constructor_id, course_id, year, starting_time=delay, total_laps=num_laps, top_quali=top_quali, overtaking_data=overtaking_data)
-        delay += np.timedelta64(0, 's')
+        racer = F1Racer(race_id, driver_id, constructor_id, course_id, year, starting_time=delay, total_laps=num_laps, top_quali=top_quali, overtaking_data=overtaking_data)
+        delay += np.timedelta64(1, 's')
         racers.append(racer)
 
-    print([(racer.driver, racer.current_time) for racer in simulate_race(racers, num_laps)])
+    print([racer for racer in simulate_race(racers, num_laps)])
+    

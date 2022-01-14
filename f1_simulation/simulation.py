@@ -7,6 +7,9 @@ from timeit import default_timer
 import numpy as np
 
 
+def get_seconds_from_timedelta(time):
+    return time / np.timedelta64(1, 's')
+
 def simulate_lap(racers: List[F1Racer], lap_number: int) -> List[F1Racer]:
     """Simulates a lap of a Formula 1 race.
 
@@ -18,16 +21,18 @@ def simulate_lap(racers: List[F1Racer], lap_number: int) -> List[F1Racer]:
     """
 
     racers = sorted(racers, key=lambda x: x.current_time)
-    lap_times = []
-    pit_stop_times = []
-    num_pit_stops = 0
-    num_overtakes = 0
 
     for pos, racer in enumerate(racers):
+        # For logging
+        racer.overtaking_mode = None
+        racer.pit_stopping = None
+        racer.pit_stop_duration = None
+        racer.sampled_lap_time = None
+
         ##### Sample lap time ##### 
         lap_time = racer.sample_lap_time(lap_number)
         racer.current_time += lap_time
-        lap_times.append(lap_time)
+        racer.sampled_lap_time = lap_time
 
         ##### Overtakes ##### 
         if pos != 0:  # first place can't get stuck behind another car
@@ -35,25 +40,34 @@ def simulate_lap(racers: List[F1Racer], lap_number: int) -> List[F1Racer]:
             previous_racer = racers[pos-1]
             # TODO Fix this so a car can overtake multiple other cars in one lap
             if racer.current_time < previous_racer.current_time:
-                overtakes = racer.sample_overtake(lap_time)
-                num_overtakes += overtakes
+                overtakes = racer.sample_overtake(get_seconds_from_timedelta(lap_time))
                 if not overtakes:
                     racer.current_time = previous_racer.current_time  # Cap the lap time 
+                    racer.overtaking_mode = 'stuck'
+                else:
+                    racer.overtaking_mode = 'success'
+            else:
+                racer.overtaking_mode = None
 
         ###### Pit stopping ###### 
         # We ignore relationships between drivers when they are pit stopping
         if racer.sample_pit_stop():
             pit_stop_time = racer.sample_pit_stop_duration()
-            pit_stop_times.append(pit_stop_time)
             racer.current_time += np.timedelta64(int(pit_stop_time), 'ms')
             racer.laps_since_pit_stop = 0
-            num_pit_stops += 1
+            racer.pit_stopping = True
+            racer.pit_stop_duration = pit_stop_time / 1000  # Convert to seconds
         else:
             racer.laps_since_pit_stop += 1
+            racer.pit_stopping = False
+            racer.pit_stop_duration = None
 
     racers = sorted(racers, key=lambda x: x.current_time)  # Sort again for good measure
     # print("#"*40 + "Lap Finished" + "#"*40)
     # print(f"Lap Times: {lap_times}, Pit Stops: {pit_stop_times}, Num Pit Stops: {num_pit_stops} Overtakes {num_overtakes}")
+    with open('results.csv', 'a') as f:
+        for racer in racers:
+            racer.write_info(f, lap_number)
     return racers
 
 

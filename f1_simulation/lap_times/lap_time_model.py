@@ -75,13 +75,6 @@ def make_lap_time_process(
         normalise_pit_laps: bool = True,
 ) -> Callable[[int, int], float]:
 
-    print(f"""
-        {driver_id=}
-        {year=}
-        {total_laps=}
-        {top_quali=}
-        {normalise_pit_laps=}
-    """)
     normalised_laps, years_pits = get_or_load_data(year)
 
     # filter out rows with data of other drivers

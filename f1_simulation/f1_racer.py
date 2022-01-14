@@ -7,6 +7,7 @@ import overtaking
 import datetime
 from timeit import default_timer as timer
 import pandas as pd
+import numpy as np
 
 def time_call(func, *args, **kwargs):
     before = timer()
@@ -14,6 +15,9 @@ def time_call(func, *args, **kwargs):
     after = timer()
     print(f"Function {func.__name__} took {after - before} seconds")
     return result
+
+def get_seconds_from_timedelta(time):
+    return time / np.timedelta64(1, 's')
 
 class F1Racer:
     """The F1Racer class is the functioning heart of this simulation. It
@@ -30,6 +34,7 @@ class F1Racer:
     """
     def __init__(
         self, 
+        race_id: str,
         driver_id: str, 
         constructor_id: str, 
         course_id: str, 
@@ -39,6 +44,7 @@ class F1Racer:
         top_quali: datetime.timedelta,
         overtaking_data: pd.DataFrame
     ):
+        self.race_id = race_id
         self.driver = driver_id
         self.constructor = constructor_id
         self.course = course_id
@@ -49,6 +55,11 @@ class F1Racer:
         time_call(self.initialise_lap_time_params, driver_id, year, total_laps, top_quali)
         time_call(self.initialise_overtake_params)
         time_call(self.initialise_pit_stop_params)
+
+        self.overtaking_mode = None
+        self.pit_stopping = None
+        self.pit_stop_duration = None
+        self.sampled_lap_time = None
 
     def __repr__(self):
         return f"""
@@ -110,3 +121,6 @@ class F1Racer:
             float: The time spent in the pit stop in milliseconds
         """
         return self.pit_stop_duration_process()
+
+    def write_info(self, f, lap_no):
+        f.write(f'\n{self.race_id},{self.driver},{self.constructor},{self.course},{get_seconds_from_timedelta(self.current_time)},{self.year},{self.laps_since_pit_stop},{lap_no},{self.overtaking_mode},{self.pit_stopping},{self.pit_stop_duration},{get_seconds_from_timedelta(self.sampled_lap_time)}')
