@@ -6,8 +6,8 @@ import numpy as np
 from matplotlib import pyplot as plt
 import pandas as pd
 from sklearn.preprocessing import StandardScaler
-import create_overtaking_dataset
-from create_overtaking_dataset import make_overtakes_dataset
+from . import create_overtaking_dataset
+from .create_overtaking_dataset import make_overtakes_dataset
 import datetime
 
 GPy.plotting.change_plotting_library('matplotlib')
