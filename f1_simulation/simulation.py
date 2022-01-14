@@ -1,10 +1,13 @@
+from concurrent.futures import process
 from f1_racer import F1Racer
 
 from typing import List
 
 from timeit import default_timer
+import numpy as np
 
-def simulate_lap(racers: List[F1Racer]) -> List[F1Racer]:
+
+def simulate_lap(racers: List[F1Racer], lap_number: int) -> List[F1Racer]:
     """Simulates a lap of a Formula 1 race.
 
     Args:
@@ -14,17 +17,17 @@ def simulate_lap(racers: List[F1Racer]) -> List[F1Racer]:
         List[F1Racer]: A list of racers with updated parameters at the end of the lap
     """
 
-    overtakes = 0
-    pit_stops = 0
-    lap_times = 0
     racers = sorted(racers, key=lambda x: x.current_time)
+    lap_times = []
+    pit_stop_times = []
+    num_pit_stops = 0
+    num_overtakes = 0
 
     for pos, racer in enumerate(racers):
         ##### Sample lap time ##### 
-        before = default_timer()
-        racer.current_time += racer.sample_lap_time()
-        after = default_timer()
-        lap_times = after - before
+        lap_time = racer.sample_lap_time(lap_number)
+        racer.current_time += lap_time
+        lap_times.append(lap_time)
 
         ##### Overtakes ##### 
         if pos != 0:  # first place can't get stuck behind another car
@@ -32,29 +35,25 @@ def simulate_lap(racers: List[F1Racer]) -> List[F1Racer]:
             previous_racer = racers[pos-1]
             # TODO Fix this so a car can overtake multiple other cars in one lap
             if racer.current_time < previous_racer.current_time:
-                before = default_timer()
-                overtakes = racer.sample_overtake(previous_racer)
-                after = default_timer()
-                overtakes += after - before
+                overtakes = racer.sample_overtake(lap_time)
+                num_overtakes += overtakes
                 if not overtakes:
                     racer.current_time = previous_racer.current_time  # Cap the lap time 
 
         ###### Pit stopping ###### 
         # We ignore relationships between drivers when they are pit stopping
-        before =  default_timer()
         if racer.sample_pit_stop():
             pit_stop_time = racer.sample_pit_stop_duration()
-            racer.current_time += pit_stop_time 
+            pit_stop_times.append(pit_stop_time)
+            racer.current_time += np.timedelta64(int(pit_stop_time), 'ms')
             racer.laps_since_pit_stop = 0
+            num_pit_stops += 1
         else:
             racer.laps_since_pit_stop += 1
 
-    after =  default_timer()
-    pit_stops += after - before
     racers = sorted(racers, key=lambda x: x.current_time)  # Sort again for good measure
-    print("#"*40 + "Lap Finished" + "#"*40)
-    print(f"Lap Times: {lap_times}, Pit Stops: {pit_stops}, Overtakes {overtakes}")
-    exit()
+    # print("#"*40 + "Lap Finished" + "#"*40)
+    # print(f"Lap Times: {lap_times}, Pit Stops: {pit_stop_times}, Num Pit Stops: {num_pit_stops} Overtakes {num_overtakes}")
     return racers
 
 
@@ -71,6 +70,6 @@ def simulate_race(racers: List[F1Racer],
         List[F1Racer]: A list of F1Racer objects at the end of the race
     """
     for lap in range(num_laps):
-        racers = simulate_lap(racers)
+        racers = simulate_lap(racers, lap)
 
     return racers

@@ -4,8 +4,15 @@ from simulation import simulate_race
 from dataprocessing import F1Dataset
 import numpy as np
 from timeit import default_timer
+from tqdm import tqdm
 
 data = F1Dataset('data')
+
+
+from overtaking import process_overtaking_data
+
+overtaking_data = process_overtaking_data()
+
 
 # Need to get the circuit ID of the courses
 df = data.results.join(data.races.set_index('raceId'), on='raceId', rsuffix='_race')
@@ -23,7 +30,7 @@ df.reset_index(drop=False, inplace=True)
 races = df['raceId'].unique()
 
 
-for race_id in races:
+for race_id in tqdm(races):
     race = df.loc[df['raceId'] == race_id]
 
     assert len(race['circuitId'].unique()) == 1
@@ -35,12 +42,15 @@ for race_id in races:
     num_laps = race['laps'].max()
 
     # TODO start the race in the correct order
-    delay = 0
+    delay = np.timedelta64(0, 's')
     racers = []
     for driver_id, constructor_id in zip(drivers, constructors):
+        if driver_id == 3:
+            break
+        # print(f"Simulating {driver_id=}, {constructor_id=}")
         top_quali = race.loc[race['driverId'] == driver_id, 'top_quali'].values[0]
-        racer = F1Racer(driver_id, constructor_id, course_id, year, starting_time=delay, total_laps=num_laps, top_quali=top_quali)
-        delay += 20
+        racer = F1Racer(driver_id, constructor_id, course_id, year, starting_time=delay, total_laps=num_laps, top_quali=top_quali, overtaking_data=overtaking_data)
+        delay += np.timedelta64(0, 's')
         racers.append(racer)
 
     print([(racer.driver, racer.current_time) for racer in simulate_race(racers, num_laps)])
