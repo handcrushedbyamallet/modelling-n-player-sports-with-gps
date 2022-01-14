@@ -7,14 +7,18 @@ import numpy as np
 data = F1Dataset('data')
 
 # Need to get the circuit ID of the courses
+MIN_SAMPLES_REQUIRED = 1
 def make_pit_stop_process(driver_id: str, constructor_id: str, course_id: str, year: int) -> Callable[[], bool]:
     laps_since_last_pitstop = 0
 
     df = data.pit_stops.join(data.races.set_index('raceId'), on='raceId', rsuffix='_race') \
         .merge(data.results.set_index('raceId'), on=['raceId','driverId']) \
         .join(data.circuits.set_index('circuitId'), on='circuitId', rsuffix='_circuit')
-    df = df[df["constructorId"] == constructor_id]
-    df = df[df["circuitId"] == course_id]
+    if len(df[df["circuitId"] == course_id]) >= MIN_SAMPLES_REQUIRED:
+        df = df[df["circuitId"] == course_id]
+    if len(df[df["constructorId"] == constructor_id])>= MIN_SAMPLES_REQUIRED:
+        df = df[df["constructorId"] == constructor_id]
+
     if len(df) == 0:
         print("ERROR: not enough data returning random number")
         return lambda: random.choice([True, False])
@@ -58,8 +62,10 @@ def make_pit_stop_duration_process(driver_id: str, constructor_id: str, course_i
     df = data.pit_stops.join(data.races.set_index('raceId'), on='raceId', rsuffix='_race') \
         .merge(data.results.set_index('raceId'), on=['raceId','driverId'], suffixes=('','_results')) \
         .join(data.circuits.set_index('circuitId'), on='circuitId', rsuffix='_circuit')
-    df = df[df["constructorId"] == constructor_id]
-    df = df[df["circuitId"] == course_id]
+    if len(df[df["circuitId"] == course_id]) >= MIN_SAMPLES_REQUIRED:
+        df = df[df["circuitId"] == course_id]
+    if len(df[df["constructorId"] == constructor_id])>= MIN_SAMPLES_REQUIRED:
+        df = df[df["constructorId"] == constructor_id]
 
     #TODO: Add dimension lap
     X = df[["year"]]
