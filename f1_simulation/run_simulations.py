@@ -25,8 +25,10 @@ df = (df.set_index(['raceId', 'driverId'])
                   .rename('top_quali')))  # Yikes
 
 df['top_quali'] = df['top_quali'] - pd.to_datetime('1900-01-01', format='%Y-%m-%d')
-
 df.reset_index(drop=False, inplace=True)
+
+df = df.loc[df['raceId'] >= 841]  # data where there is proper logging of pit stopping
+
 races = df['raceId'].unique()
 
 with open('results.csv', 'w') as f:
@@ -43,17 +45,20 @@ for race_id in tqdm(races):
     year = data.races.loc[data.races['raceId'] == race_id, 'year'].values[0]
     num_laps = race['laps'].max()
 
-    # TODO start the race in the correct order
     delay = np.timedelta64(0, 's')
     racers = []
-    for driver_id, constructor_id in zip(drivers, constructors):
-        if driver_id > 2:
-            break
-        # print(f"Simulating {driver_id=}, {constructor_id=}")
-        top_quali = race.loc[race['driverId'] == driver_id, 'top_quali'].values[0]
-        racer = F1Racer(race_id, driver_id, constructor_id, course_id, year, starting_time=delay, total_laps=num_laps, top_quali=top_quali, overtaking_data=overtaking_data)
-        delay += np.timedelta64(1, 's')
-        racers.append(racer)
+    try:
+        for driver_id, constructor_id in zip(drivers, constructors):
+            # print(f"Simulating {driver_id=}, {constructor_id=}")
+            top_quali = race.loc[race['driverId'] == driver_id, 'top_quali'].values[0]
+            racer = F1Racer(race_id, driver_id, constructor_id, course_id, year, starting_time=delay, total_laps=num_laps, top_quali=top_quali, overtaking_data=overtaking_data)
+            delay += np.timedelta64(1, 's')
+            racers.append(racer)
+    except Exception as e:
+        continue
 
-    print([racer for racer in simulate_race(racers, num_laps)])
+    try:
+        simulate_race(racers, num_laps)
+    except Exception as e:
+        print(f"Couldn't simulate race {race_id} because of error")
     

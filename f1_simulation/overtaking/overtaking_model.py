@@ -57,7 +57,7 @@ def make_overtaking_process(driver: str, constructor: int, courseId: int, year: 
     Y = overtaking[['success_perc']]
     
     print("initialise kernel")
-    kernel = GPy.kern.RBF(input_dim=3, lengthscale=10)
+    kernel = GPy.kern.RBF(input_dim=4, lengthscale=10)
 
     print("fit model")
     m = GPy.models.GPRegression(X,Y,kernel)

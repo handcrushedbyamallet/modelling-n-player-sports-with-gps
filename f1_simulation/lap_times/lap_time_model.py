@@ -14,6 +14,7 @@ def get_or_load_data(year: int) -> Tuple[pd.DataFrame, pd.DataFrame]:
     global processed_laps
     global processed_pits
     if year in processed_pits:
+        print("already processed")
         return processed_laps[year], processed_pits[year]
 
     data = F1Dataset('data')
