@@ -78,7 +78,7 @@ def make_pit_stop_duration_process(driver_id: str, constructor_id: str, course_i
     #m.optimize(messages=True)
     prediction = m.predict(np.array([[year]]))
     def callable():
-        return np.random.normal(loc=prediction[0], scale=prediction[1])
+        return np.random.normal(loc=prediction[0], scale=prediction[1])[0][0]
     return callable
 
 

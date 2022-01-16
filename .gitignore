@@ -135,7 +135,7 @@ dmypy.json
 .DS_Store
 
 # Data
-*.csv
+data/
 
 # Files
 f1_simulation/dataprocessing.py
