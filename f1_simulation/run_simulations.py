@@ -55,6 +55,7 @@ for race_id in tqdm(races):
             delay += np.timedelta64(1, 's')
             racers.append(racer)
     except Exception as e:
+        print(f"Couldn't simulate race {race_id} because of error")
         continue
 
     try:

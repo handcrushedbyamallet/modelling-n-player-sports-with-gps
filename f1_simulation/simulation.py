@@ -21,6 +21,7 @@ def simulate_lap(racers: List[F1Racer], lap_number: int) -> List[F1Racer]:
     """
 
     racers = sorted(racers, key=lambda x: x.current_time)
+    racers_past_times = list(map(lambda x: x.current_time, racers))
 
     for pos, racer in enumerate(racers):
         # For logging
@@ -50,9 +51,10 @@ def simulate_lap(racers: List[F1Racer], lap_number: int) -> List[F1Racer]:
                 racer.overtaking_mode = None
 
         ###### Pit stopping ###### 
-        # We ignore relationships between drivers when they are pit stopping
-        if racer.sample_pit_stop():
-            pit_stop_time = racer.sample_pit_stop_duration()
+        car_before = racers_past_times[pos-1] if pos>0 else 1e9
+        car_after = racers_past_times[pos+1] if pos<len(racers_past_times)-1 else 1e9
+        if racer.sample_pit_stop(car_before, car_after, lap_time):
+            pit_stop_time = racer.sample_pit_stop_duration(lap_number)
             racer.current_time += np.timedelta64(int(pit_stop_time), 'ms')
             racer.laps_since_pit_stop = 0
             racer.pit_stopping = True
