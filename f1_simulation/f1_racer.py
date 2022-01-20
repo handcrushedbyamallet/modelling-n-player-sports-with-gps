@@ -106,21 +106,21 @@ class F1Racer:
         """
         return self.overtake_process(opponent)
 
-    def sample_pit_stop(self) -> bool:
+    def sample_pit_stop(self, car_before: float, car_after: float, lap_time: float) -> bool:
         """Samples whether the racer will go in for a pit stop
 
         Returns:
             bool: Whether the car goes in for a pit stop
         """
-        return self.pit_stop_process()
+        return self.pit_stop_process(car_before, car_after, lap_time)
 
-    def sample_pit_stop_duration(self) -> float:
+    def sample_pit_stop_duration(self, lap: int) -> float:
         """Gives the duration of the pit stop
 
         Returns:
             float: The time spent in the pit stop in milliseconds
         """
-        return self.pit_stop_duration_process()
+        return self.pit_stop_duration_process(lap)
 
     def write_info(self, f, lap_no):
         f.write(f'\n{self.race_id},{self.driver},{self.constructor},{self.course},{get_seconds_from_timedelta(self.current_time)},{self.year},{self.laps_since_pit_stop},{lap_no},{self.overtaking_mode},{self.pit_stopping},{self.pit_stop_duration},{get_seconds_from_timedelta(self.sampled_lap_time)}')
